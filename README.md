@@ -1,12 +1,13 @@
-# xovi-mcp
+# XOVI MCP Server
 
-MCP server for the [XOVI](https://www.xovi.de) SEO suite. Exposes the XOVI
-REST API as MCP tools: projects, organic keyword data, daily ranking
-monitoring, OVI visibility trends, backlinks, SEA keywords, PDF reports and
-the address book — plus a generic escape hatch for undocumented endpoints.
+The [XOVI](https://www.xovi.de) SEO suite as MCP tools for Claude and other
+AI agents. This (unofficial) server exposes the XOVI REST API: projects,
+organic keyword data, daily ranking monitoring, OVI visibility trends,
+backlinks, SEA keywords, PDF reports and the address book — plus a generic
+escape hatch for undocumented endpoints.
 
 Runs over stdio and works with any MCP client (Claude Code, Claude Desktop,
-etc.).
+etc.). The package/repo name is `xovi-mcp`.
 
 ## Important: credits
 
@@ -219,6 +220,14 @@ npm test
 Unit tests use Node's built-in test runner. The HTTP layer is tested with a
 mocked `fetch`, the tools end-to-end through an in-memory MCP transport
 with a mocked API client — no network access and no credits needed.
+
+## About BM1
+
+`xovi-mcp` is built and maintained by [BM1](https://www.bm1.de), a German
+agency for SEO, web development and custom software. We build
+search-visible websites, data-driven SEO setups and special-purpose tooling
+like this MCP server. If you need help with SEO, a web project or an
+integration nobody offers off the shelf — [talk to us](https://www.bm1.de).
 
 ## License
 
