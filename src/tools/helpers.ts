@@ -53,7 +53,9 @@ export async function runCall(
 }
 
 /** Shared zod fragments so all tools describe common parameters identically. */
-export const searchengineParam = z
+
+/** Search engine ID for the organic keywords service (query param `sengine`). */
+export const sengineParam = z
   .number()
   .int()
   .positive()
@@ -61,6 +63,9 @@ export const searchengineParam = z
   .describe(
     "Numeric XOVI search engine ID, default 1 (Google Germany). Full list via xovi_get_search_engines.",
   );
+
+/** Search engine ID for the monitor service (query param `sengineid`). */
+export const sengineidParam = sengineParam;
 
 export const offsetParam = z
   .number()
@@ -80,11 +85,18 @@ export const rowsParam = z
 export const urlpatternParam = z
   .string()
   .min(1)
-  .describe('Domain or URL pattern without protocol, e.g. "www.example.com".');
+  .describe(
+    'Domain or URL pattern without protocol, e.g. "www.example.com". Must be a real domain — placeholder values are rejected with "urlpattern not supported".',
+  );
+
+export const domainParam = z
+  .string()
+  .min(1)
+  .describe('Domain without protocol, e.g. "www.example.com".');
 
 export const extraParamsParam = z
   .record(z.union([z.string(), z.number(), z.boolean()]))
   .optional()
   .describe(
-    "Additional endpoint-specific query parameters. XOVI parameter names are not fully documented; on error 80 (param missing) the response field 'paramname' tells you which parameter the endpoint expects.",
+    "Additional endpoint-specific query parameters. XOVI parameter names are not fully documented; on a 'param missing' error the response field 'paramname' tells you which parameter the endpoint expects (error codes vary per endpoint).",
   );

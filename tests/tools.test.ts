@@ -143,7 +143,7 @@ test("xovi_get_credit_state calls user/getCreditstate and returns ok payload", a
   assert.deepEqual(payload.data, { creditsLeft: 999 });
 });
 
-test("xovi_get_keywords applies defaults (searchengine 1, offset 0, rows 100)", async () => {
+test("xovi_get_keywords applies defaults (sengine 1, offset 0, rows 100)", async () => {
   const { client, calls } = await setup();
   await client.callTool({
     name: "xovi_get_keywords",
@@ -152,10 +152,21 @@ test("xovi_get_keywords applies defaults (searchengine 1, offset 0, rows 100)", 
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].params, {
     urlpattern: "www.example.com",
-    searchengine: 1,
+    sengine: 1,
     offset: 0,
     rows: 100,
   });
+});
+
+test("links tools send domain (live-verified param name)", async () => {
+  const { client, calls } = await setup();
+  await client.callTool({
+    name: "xovi_get_backlinks",
+    arguments: { domain: "www.example.com" },
+  });
+  assert.equal(calls[0].service, "links");
+  assert.equal(calls[0].method, "getBacklinks");
+  assert.deepEqual(calls[0].params, { domain: "www.example.com", offset: 0, rows: 100 });
 });
 
 test("monitoring tools call the monitor service (not keywords/monitor)", async () => {
@@ -235,14 +246,14 @@ test("write tools merge extra_params into the query", async () => {
   await client.callTool({
     name: "xovi_monitoring_add_keywords",
     arguments: {
-      projectId: 7,
+      projhash: "8149c8eb6b10bb49455b0af9be4503d9",
       keywords: "seo agentur,seo beratung",
       extra_params: { device: "mobile" },
     },
   });
   assert.deepEqual(calls[0].params, {
-    projectId: 7,
-    searchengine: 1,
+    projhash: "8149c8eb6b10bb49455b0af9be4503d9",
+    sengineid: 1,
     keywords: "seo agentur,seo beratung",
     device: "mobile",
   });

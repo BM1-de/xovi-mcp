@@ -1,13 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { XoviApi } from "../api-client.ts";
-import { offsetParam, rowsParam, runCall, urlpatternParam } from "./helpers.ts";
+import { domainParam, offsetParam, rowsParam, runCall } from "./helpers.ts";
 
+// All links endpoints take `domain` (live-verified), not `urlpattern` as
+// parts of the XOVI docs claim.
 export function registerLinkTools(server: McpServer, api: XoviApi) {
   server.tool(
     "xovi_get_backlink_trend",
     "Get the backlink growth/loss history of a domain over time. ~15 credits/row.",
     {
-      urlpattern: urlpatternParam,
+      domain: domainParam,
     },
     async (params) => runCall(api, "links", "getDomainTrend", params),
   );
@@ -16,7 +18,7 @@ export function registerLinkTools(server: McpServer, api: XoviApi) {
     "xovi_get_backlinks",
     "Get the backlinks pointing to a domain (source URL, target, anchor, attributes). Paginated — check totalRows. ~10 credits/100 rows.",
     {
-      urlpattern: urlpatternParam,
+      domain: domainParam,
       offset: offsetParam,
       rows: rowsParam,
     },
@@ -27,7 +29,7 @@ export function registerLinkTools(server: McpServer, api: XoviApi) {
     "xovi_get_linktexts",
     "Get the anchor text distribution of a domain's backlink profile. Paginated. ~20 credits/100 rows.",
     {
-      urlpattern: urlpatternParam,
+      domain: domainParam,
       offset: offsetParam,
       rows: rowsParam,
     },
@@ -38,7 +40,7 @@ export function registerLinkTools(server: McpServer, api: XoviApi) {
     "xovi_get_hrefs",
     "Get the link target URLs (hrefs) used by backlinks pointing to a domain. Paginated. ~20 credits/100 rows.",
     {
-      urlpattern: urlpatternParam,
+      domain: domainParam,
       offset: offsetParam,
       rows: rowsParam,
     },
@@ -49,7 +51,7 @@ export function registerLinkTools(server: McpServer, api: XoviApi) {
     "xovi_get_linked_pages",
     "Get which pages of a domain receive backlinks (link target distribution). Paginated. ~20 credits/100 rows.",
     {
-      urlpattern: urlpatternParam,
+      domain: domainParam,
       offset: offsetParam,
       rows: rowsParam,
     },

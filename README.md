@@ -52,8 +52,9 @@ before running larger operations.
 ### Organic keywords
 
 Weekly XOVI crawl index (in contrast to the daily [Monitoring](#monitoring)).
-All tools take a `searchengine` ID (default `1` = Google Germany; full list
-via `xovi_get_search_engines`). Paginated tools take `offset` (default 0)
+All tools take a `sengine` ID (default `1` = Google Germany; full list via
+`xovi_get_search_engines` — parameter name live-verified, the official docs'
+`searchengine` does not work). Paginated tools take `offset` (default 0)
 and `rows` (default 100, max 100) and report `totalRows`.
 
 | Tool | Endpoint | Credits | Notes |
@@ -73,21 +74,25 @@ and `rows` (default 100, max 100) and report `totalRows`.
 
 ### Monitoring
 
-Daily keyword tracking per project (XOVI service `monitor`). Note that parts
-of the XOVI docs label these endpoints `keywords/monitor/...` — the live API
-answers on `monitor/...` only.
+Daily keyword tracking per project (XOVI service `monitor`). Two live-verified
+deviations from the official docs: the service path is `monitor/...` (not
+`keywords/monitor/...`, which redirects to the login page), and entities are
+identified by `projhash` / `domain` + `keyword` + `sengineid` — there are no
+numeric project/keyword IDs. Local (city-level) tracking works by passing the
+`sengineid` of a city search engine; such engines must be created once in the
+XOVI suite UI (there is no API endpoint for that).
 
 | Tool | Endpoint | Credits | Notes |
 |---|---|---|---|
-| `xovi_monitoring_get_domains` | `monitor/getDomains` | ~10 | |
-| `xovi_monitoring_get_keywords` | `monitor/getKeywords` | ~20/100 rows | by `projectId` |
-| `xovi_monitoring_get_keyword_rankings` | `monitor/getKeywordRankings` | ~25 | by `keywordId` |
-| `xovi_monitoring_get_keyword_trend` | `monitor/getKeywordTrend` | ~15 | daily position history |
-| `xovi_monitoring_get_ovi_trend` | `monitor/getOviTrend` | ~5/row | project OVI history |
+| `xovi_monitoring_get_domains` | `monitor/getDomains` | ~10 | projectHash + domain pairs |
+| `xovi_monitoring_get_keywords` | `monitor/getKeywords` | ~20/100 rows | paginated, no required params |
+| `xovi_monitoring_get_keyword_rankings` | `monitor/getKeywordRankings` | ~25 | by `keyword` + `sengineid` |
+| `xovi_monitoring_get_keyword_trend` | `monitor/getKeywordTrend` | ~15 | by `domain` + `keyword` + `sengineid` |
+| `xovi_monitoring_get_ovi_trend` | `monitor/getOviTrend` | ~5/row | by `projhash` |
 | `xovi_monitoring_get_limits` | `monitor/getKeywordLimits` | free | check before adding |
-| `xovi_monitoring_add_keywords` | `monitor/addKeywords` | ~20 | write; consumes tracking quota |
-| `xovi_monitoring_edit_keywords` | `monitor/editKeywords` | ~10 | write |
-| `xovi_monitoring_delete_keywords` | `monitor/deleteKeywords` | ~10 | **destructive**; tracking history stops |
+| `xovi_monitoring_add_keywords` | `monitor/addKeywords` | ~20 | write; by `projhash`, consumes tracking quota |
+| `xovi_monitoring_edit_keywords` | `monitor/editKeywords` | ~10 | write; selects by `keyword`/`domain` |
+| `xovi_monitoring_delete_keywords` | `monitor/deleteKeywords` | ~10 | **destructive**; selects by `keyword`/`domain` |
 
 ### Backlinks
 

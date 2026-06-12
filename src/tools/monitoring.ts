@@ -2,64 +2,83 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { XoviApi } from "../api-client.ts";
 import {
+  domainParam,
   extraParamsParam,
   offsetParam,
   rowsParam,
   runCall,
-  searchengineParam,
+  sengineidParam,
 } from "./helpers.ts";
 
 /**
  * Daily keyword monitoring (service `monitor`), i.e. the keywords the
  * account actively tracks per project — as opposed to the weekly organic
- * crawl index in tools/keywords.ts. Note: parts of the XOVI docs label these
- * endpoints `keywords/monitor/...`, but the live API only answers on
- * `monitor/...` (anything else 302-redirects to the login page).
+ * crawl index in tools/keywords.ts.
+ *
+ * Live-API findings that contradict the official docs:
+ * - The service path is `monitor/...` (not `keywords/monitor/...`, which
+ *   302-redirects to the login page).
+ * - Monitored keywords are identified by `domain` + `keyword` + `sengineid`
+ *   and projects by `projhash` (see xovi_monitoring_get_domains /
+ *   xovi_list_projects) — there are no numeric keyword/project IDs.
  */
 export function registerMonitoringTools(server: McpServer, api: XoviApi) {
   server.tool(
     "xovi_monitoring_get_domains",
-    "List all domains under daily keyword monitoring. ~10 credits.",
+    "List all monitored domains with their project hashes (projectHash + domain pairs). The projectHash is the `projhash` other monitoring tools expect. ~10 credits.",
     {},
     async () => runCall(api, "monitor", "getDomains"),
   );
 
   server.tool(
     "xovi_monitoring_get_keywords",
-    "List the monitored keywords of a project (daily tracking) with their current positions. Paginated. ~20 credits/100 rows.",
+    "List monitored keywords (daily tracking) with current positions; response items include keyword, domain and sengineId. Paginated. ~20 credits/100 rows.",
     {
-      projectId: z.union([z.string(), z.number()]).describe("XOVI project ID (see xovi_list_projects)."),
       offset: offsetParam,
       rows: rowsParam,
+      extra_params: extraParamsParam,
     },
-    async (params) => runCall(api, "monitor", "getKeywords", params),
+    async ({ extra_params, ...params }) =>
+      runCall(api, "monitor", "getKeywords", { ...params, ...extra_params }),
   );
 
   server.tool(
     "xovi_monitoring_get_keyword_rankings",
     "Get the current SERP rankings for one monitored keyword. ~25 credits.",
     {
-      keywordId: z.union([z.string(), z.number()]).describe("Monitoring keyword ID (see xovi_monitoring_get_keywords)."),
+      keyword: z.string().min(1).describe("The monitored keyword."),
+      sengineid: sengineidParam,
+      extra_params: extraParamsParam,
     },
-    async (params) => runCall(api, "monitor", "getKeywordRankings", params),
+    async ({ extra_params, ...params }) =>
+      runCall(api, "monitor", "getKeywordRankings", { ...params, ...extra_params }),
   );
 
   server.tool(
     "xovi_monitoring_get_keyword_trend",
-    "Get the daily position history of one monitored keyword. ~15 credits.",
+    "Get the daily position history of one monitored keyword (identified by domain + keyword + sengineid). ~15 credits.",
     {
-      keywordId: z.union([z.string(), z.number()]).describe("Monitoring keyword ID (see xovi_monitoring_get_keywords)."),
+      domain: domainParam,
+      keyword: z.string().min(1).describe("The monitored keyword."),
+      sengineid: sengineidParam,
+      extra_params: extraParamsParam,
     },
-    async (params) => runCall(api, "monitor", "getKeywordTrend", params),
+    async ({ extra_params, ...params }) =>
+      runCall(api, "monitor", "getKeywordTrend", { ...params, ...extra_params }),
   );
 
   server.tool(
     "xovi_monitoring_get_ovi_trend",
     "Get the OVI (visibility) history of a monitored project. ~5 credits/row.",
     {
-      projectId: z.union([z.string(), z.number()]).describe("XOVI project ID (see xovi_list_projects)."),
+      projhash: z
+        .string()
+        .min(1)
+        .describe("Project hash (see xovi_monitoring_get_domains or xovi_list_projects)."),
+      extra_params: extraParamsParam,
     },
-    async (params) => runCall(api, "monitor", "getOviTrend", params),
+    async ({ extra_params, ...params }) =>
+      runCall(api, "monitor", "getOviTrend", { ...params, ...extra_params }),
   );
 
   server.tool(
@@ -71,11 +90,14 @@ export function registerMonitoringTools(server: McpServer, api: XoviApi) {
 
   server.tool(
     "xovi_monitoring_add_keywords",
-    "Add keywords to the daily monitoring of a project. Write operation — each keyword consumes monitoring quota and causes recurring daily credit load. Check xovi_monitoring_get_limits first. ~20 credits.",
+    "Add keywords to the daily monitoring of a project. Write operation — each keyword consumes monitoring quota and causes recurring daily credit load. Check xovi_monitoring_get_limits first. To track locally, pass the sengineid of a city-level search engine (must be created once in the XOVI suite UI; see xovi_get_search_engines). ~20 credits.",
     {
-      projectId: z.union([z.string(), z.number()]).describe("XOVI project ID (see xovi_list_projects)."),
-      searchengine: searchengineParam,
+      projhash: z
+        .string()
+        .min(1)
+        .describe("Project hash (see xovi_monitoring_get_domains or xovi_list_projects)."),
       keywords: z.string().min(1).describe("Comma-separated list of keywords to add."),
+      sengineid: sengineidParam,
       extra_params: extraParamsParam,
     },
     async ({ extra_params, ...params }) =>
@@ -84,21 +106,25 @@ export function registerMonitoringTools(server: McpServer, api: XoviApi) {
 
   server.tool(
     "xovi_monitoring_edit_keywords",
-    "Edit a monitored keyword (endpoint-specific parameters via extra_params). Write operation. ~10 credits.",
+    "Edit monitored keywords selected by keyword and/or domain (the API requires at least one of the two). Endpoint-specific fields via extra_params. Write operation. ~10 credits.",
     {
-      keywordId: z.union([z.string(), z.number()]).describe("Monitoring keyword ID to edit."),
+      keyword: z.string().optional().describe("Selector: the monitored keyword."),
+      domain: z.string().optional().describe("Selector: the monitored domain."),
       extra_params: extraParamsParam,
     },
-    async ({ keywordId, extra_params }) =>
-      runCall(api, "monitor", "editKeywords", { keywordId, ...extra_params }),
+    async ({ extra_params, ...params }) =>
+      runCall(api, "monitor", "editKeywords", { ...params, ...extra_params }),
   );
 
   server.tool(
     "xovi_monitoring_delete_keywords",
-    "DESTRUCTIVE: Remove a keyword from monitoring — its daily tracking history stops. Cannot be undone — confirm with the user before calling. ~10 credits.",
+    "DESTRUCTIVE: Remove keywords from monitoring (selected by keyword and/or domain) — their daily tracking history stops. Cannot be undone — confirm with the user before calling, and check the response's success/count fields: the selector semantics are not fully documented, so verify what was actually deleted. ~10 credits.",
     {
-      keywordId: z.union([z.string(), z.number()]).describe("Monitoring keyword ID to delete."),
+      keyword: z.string().optional().describe("Selector: the monitored keyword."),
+      domain: z.string().optional().describe("Selector: the monitored domain."),
+      extra_params: extraParamsParam,
     },
-    async (params) => runCall(api, "monitor", "deleteKeywords", params),
+    async ({ extra_params, ...params }) =>
+      runCall(api, "monitor", "deleteKeywords", { ...params, ...extra_params }),
   );
 }
